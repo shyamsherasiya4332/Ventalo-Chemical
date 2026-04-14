@@ -11,9 +11,110 @@ const ProductDetails = () => {
     const allProducts = products.flatMap(category => category.items);
     const product = allProducts.find(p => p.id === id);
 
+    const [shareStatus, setShareStatus] = React.useState(null);
+    const [isGeneratingPDF, setIsGeneratingPDF] = React.useState(false);
+    const [base64Image, setBase64Image] = React.useState(null);
+    const specTemplateRef = React.useRef(null);
+
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [id]);
+        
+        // Convert image to base64 to avoid CORS issues in PDF generation
+        // using the "Canvas Bridge" method which is the "proper" way for browser engines
+        if (product && product.image) {
+            const convertImage = (url) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous'; 
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL('image/png'));
+                        } catch (e) {
+                            console.warn("Canvas capture failed, trying direct URL fallback", e);
+                            resolve(url);
+                        }
+                    };
+                    img.onerror = () => {
+                        console.error("Image load failed for PDF bridge");
+                        resolve(url);
+                    };
+                    img.src = url;
+                });
+            };
+            
+            convertImage(product.image).then(data => setBase64Image(data));
+        }
+    }, [id, product]);
+
+    const handleShare = async () => {
+        const shareData = {
+            title: `Ventalo Chemical - ${product.title}`,
+            text: product.description,
+            url: window.location.href,
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                setShareStatus('Link Copied!');
+                setTimeout(() => setShareStatus(null), 3000);
+            }
+        } catch (err) {
+            console.error('Error sharing:', err);
+        }
+    };
+
+    const handleDownloadSpec = async () => {
+        if (product.specSheet) {
+            window.open(product.specSheet, '_blank');
+            return;
+        }
+
+        // Diagnostic Check: Verify if PDF library is loaded via CDN
+        if (typeof window.html2pdf === 'undefined') {
+            console.error("PDF engine not ready. Falling back.");
+            window.print();
+            return;
+        }
+
+        setIsGeneratingPDF(true);
+
+        // Crucial pause to ensure browser has painted the Base64 image in the template
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        try {
+            const element = specTemplateRef.current;
+            if (!element) throw new Error("Template not found.");
+
+            const options = {
+                margin: [0.4, 0.4, 0.4, 0.4],
+                filename: `${product.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-specification.pdf`,
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: {
+                    scale: 3, // Premium Print Resolution
+                    useCORS: true,
+                    letterRendering: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            await window.html2pdf().from(element).set(options).save();
+        } catch (error) {
+            console.error('PDF SYSTEM ERROR:', error);
+            window.print();
+        } finally {
+            setIsGeneratingPDF(false);
+        }
+    };
 
     if (!product) {
         return (
@@ -27,7 +128,96 @@ const ProductDetails = () => {
     }
 
     return (
-        <div className="bg-ventalo-light min-h-screen">
+        <>
+            <div className="bg-ventalo-light min-h-screen">
+            {/* BULLETPROOF HIDDEN SPEC SHEET TEMPLATE */}
+            {/* Using absolute with ultra-low visibility to ensure capture availability while hiding from user */}
+            <div className="absolute top-0 left-0 w-[800px] -z-50 opacity-[0.001] pointer-events-none" style={{ left: '-5000px' }}>
+                <div ref={specTemplateRef} className="p-10 bg-white" style={{ fontFamily: 'Inter, sans-serif', width: '794px' }}>
+                    <div className="flex justify-between items-center border-b-4 border-ventalo-orange pb-8 mb-10">
+                        <div>
+                            <h2 className="text-3xl font-black text-ventalo-blue">VENTALO CHEMICAL</h2>
+                            <p className="text-sm text-gray-500 uppercase tracking-[0.2em] font-bold">Premium Construction Chemicals</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm font-black text-ventalo-blue">PRODUCT SPECIFICATION SHEET</p>
+                            <p className="text-xs text-gray-400 mt-1 font-mono">ID: {product.id.toUpperCase()}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-10 mb-12">
+                        <div className="w-2/5">
+                            <div className="aspect-square bg-white rounded-3xl flex items-center justify-center overflow-hidden border-2 border-gray-50 p-6 shadow-sm">
+                                <img
+                                    src={base64Image || product.image}
+                                    alt={product.title}
+                                    className="max-h-full max-w-full object-contain"
+                                />
+                            </div>
+                        </div>
+                        <div className="w-3/5">
+                            <h1 className="text-5xl font-black text-ventalo-blue mb-6 leading-tight uppercase">{product.title}</h1>
+                            <div className="bg-ventalo-orange/5 border-l-4 border-ventalo-orange p-6 mb-8 rounded-r-2xl">
+                                <p className="text-sm text-ventalo-blue leading-relaxed font-semibold">
+                                    {product.fullDescription || product.description}
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                {product.benefits.slice(0, 6).map((benefit, i) => (
+                                    <div key={i} className="flex items-center gap-3 text-xs text-gray-700 font-bold bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-ventalo-orange flex-shrink-0"></div>
+                                        {benefit}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mb-10">
+                        <div className="flex items-center gap-4 mb-6">
+                            <h3 className="text-lg font-black text-ventalo-blue uppercase tracking-wider whitespace-nowrap">Technical Specifications</h3>
+                            <div className="h-0.5 bg-gray-100 w-full"></div>
+                        </div>
+                        <table className="w-full border-collapse rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                            <tbody>
+                                {product.features?.map((feature, idx) => (
+                                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                        <td className="py-4 px-6 text-sm font-bold text-gray-500 border-b border-gray-100">{feature.title}</td>
+                                        <td className="py-4 px-6 text-sm font-black text-ventalo-blue text-right border-b border-gray-100 font-mono">{feature.value}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="mb-12">
+                        <div className="flex items-center gap-4 mb-6">
+                            <h3 className="text-lg font-black text-ventalo-blue uppercase tracking-wider whitespace-nowrap">Recommended Applications</h3>
+                            <div className="h-0.5 bg-gray-100 w-full"></div>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            {product.applications?.map((app, i) => (
+                                <span key={i} className="text-xs font-black bg-ventalo-blue text-white px-5 py-2 rounded-xl shadow-sm">
+                                    {app}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mt-12 pt-10 border-t-2 border-gray-100 flex justify-between items-center bg-gray-50/50 -mx-10 px-10 -mb-10 pb-10">
+                        <div className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.1em]">
+                            Generated: {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm font-black text-ventalo-blue tracking-wider">VENTALO CHEMICAL</p>
+                            <p className="text-[11px] text-gray-500 font-medium">Morbi, Gujarat, India • ventalochemical.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 md:pb-20">
                 {/* Back Link & Breadcrumbs */}
                 {/* Breadcrumb Navigation - The Perfect Place */}
@@ -74,16 +264,34 @@ const ProductDetails = () => {
                             </div>
 
                             {/* Quick Actions */}
-                            <div className="grid grid-cols-2 gap-4 mt-8">
-                                <button className="flex items-center justify-center gap-2 py-4 bg-white border border-gray-100 rounded-xl text-ventalo-blue font-bold hover:bg-gray-50 hover:border-ventalo-blue/30 transition-all shadow-sm group">
-                                    <Share2 size={20} className="group-hover:scale-110 transition-transform text-gray-400 group-hover:text-ventalo-blue" /> Share
+                            <div className="grid grid-cols-2 gap-4 mt-8 relative">
+                                {shareStatus && (
+                                    <div className="absolute -top-12 left-0 right-0 flex justify-center animate-bounce">
+                                        <span className="bg-ventalo-orange text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                                            {shareStatus}
+                                        </span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleShare}
+                                    className="flex items-center justify-center gap-2 py-4 bg-white border border-gray-100 rounded-xl text-ventalo-blue font-bold hover:bg-gray-50 hover:border-ventalo-blue/30 transition-all shadow-sm group"
+                                >
+                                    <Share2 size={20} className="group-hover:scale-110 transition-transform text-gray-400 group-hover:text-ventalo-blue" />
+                                    {shareStatus ? 'Copied!' : 'Share'}
                                 </button>
-                                <button className="flex items-center justify-center gap-2 py-4 bg-white border border-gray-100 rounded-xl text-ventalo-blue font-bold hover:bg-gray-50 hover:border-ventalo-blue/30 transition-all shadow-sm group">
-                                    <Download size={20} className="group-hover:scale-110 transition-transform text-gray-400 group-hover:text-ventalo-blue" /> Spec Sheet
+                                <button
+                                    onClick={handleDownloadSpec}
+                                    disabled={isGeneratingPDF}
+                                    className={`flex items-center justify-center gap-2 py-4 bg-white border border-gray-100 rounded-xl text-ventalo-blue font-bold hover:bg-gray-50 hover:border-ventalo-blue/30 transition-all shadow-sm group ${isGeneratingPDF ? 'opacity-70 cursor-wait' : ''}`}
+                                >
+                                    <Download size={20} className={`group-hover:scale-110 transition-transform text-gray-400 group-hover:text-ventalo-blue ${isGeneratingPDF ? 'animate-bounce text-ventalo-blue' : ''}`} /> 
+                                    {isGeneratingPDF ? 'Generating...' : 'Spec Sheet'}
                                 </button>
                             </div>
+
                         </div>
                     </div>
+
 
                     {/* Content Section */}
                     <div className="lg:col-span-6 space-y-12 animate-[slide-up_0.8s_ease-out]">
@@ -204,6 +412,7 @@ const ProductDetails = () => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

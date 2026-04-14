@@ -16,7 +16,8 @@ export const products = [
                     { title: "Pot Life", value: "Approx. 2 hours" },
                     { title: "Shelf Life", value: "12 months from date of manufacture" }
                 ],
-                image: "https://ventalochemical.com/upload/products/platinum.png"
+                image: "https://ventalochemical.com/upload/products/platinum.png",
+                specSheet: null
             },
             {
                 id: "silver-tile-adhesive",
@@ -30,7 +31,8 @@ export const products = [
                     { title: "Pot Life", value: "Approx. 2 hours" },
                     { title: "Shelf Life", value: "12 months" }
                 ],
-                image: "https://ventalochemical.com/upload/products/silver.png"
+                image: "https://ventalochemical.com/upload/products/silver.png",
+                specSheet: null
             },
             {
                 id: "multi-purpose-adhesive",
@@ -43,7 +45,8 @@ export const products = [
                     { title: "Coverage", value: "Approx. 45-50 sq. ft. per 20kg bag" },
                     { title: "Standard", value: "IS 15477:2019 Type 2" }
                 ],
-                image: "https://ventalochemical.com/upload/products/multi-purpose.png"
+                image: "https://ventalochemical.com/upload/products/multi-purpose.png",
+                specSheet: null
             },
             {
                 id: "gold-tile-adhesive",
@@ -56,7 +59,8 @@ export const products = [
                     { title: "Coverage", value: "Approx. 55-60 sq. ft. per 20kg bag" },
                     { title: "Standard", value: "IS 15477:2019 Type 3" }
                 ],
-                image: "https://ventalochemical.com/upload/products/gold.png"
+                image: "https://ventalochemical.com/upload/products/gold.png",
+                specSheet: null
             }
         ]
     },
@@ -77,7 +81,8 @@ export const products = [
                     { title: "Colors", value: "Available in 20+ shades" },
                     { title: "Chemical Resistance", value: "Excellent" }
                 ],
-                image: "https://ventalochemical.com/upload/products/premium-epoxy.png"
+                image: "https://ventalochemical.com/upload/products/premium-epoxy.png",
+                specSheet: null
             },
             {
                 id: "tile-grout",
@@ -90,7 +95,8 @@ export const products = [
                     { title: "Joint Width", value: "1mm to 5mm" },
                     { title: "Pack Size", value: "1kg pouch" }
                 ],
-                image: "https://ventalochemical.com/upload/products/tile-grout.png"
+                image: "https://ventalochemical.com/upload/products/tile-grout.png",
+                specSheet: null
             },
             {
                 id: "grout-admix",
@@ -103,7 +109,8 @@ export const products = [
                     { title: "Dosage", value: "Use instead of water" },
                     { title: "Pack Size", value: "200ml, 500ml, 1L" }
                 ],
-                image: "https://ventalochemical.com/upload/products/grout-admix.png"
+                image: "https://ventalochemical.com/upload/products/grout-admix.png",
+                specSheet: null
             },
             {
                 id: "2-part-epoxy-grout",
@@ -116,7 +123,8 @@ export const products = [
                     { title: "Components", value: "Resin + Hardener" },
                     { title: "Cure Time", value: "24 hours foot traffic" }
                 ],
-                image: "https://ventalochemical.com/upload/products/2-part-epoxy-grout.png"
+                image: "https://ventalochemical.com/upload/products/2-part-epoxy-grout.png",
+                specSheet: null
             }
         ]
     },
@@ -136,7 +144,8 @@ export const products = [
                     { title: "Solid Content", value: "High solid content" },
                     { title: "Pack Size", value: "1L, 5L, 20L" }
                 ],
-                image: "https://ventalochemical.com/upload/products/sbr-premium-latex.png"
+                image: "https://ventalochemical.com/upload/products/sbr-premium-latex.png",
+                specSheet: null
             },
             {
                 id: "tiles-cleaner",
@@ -149,7 +158,8 @@ export const products = [
                     { title: "Type", value: "Acidic Cleaner" },
                     { title: "Pack Size", value: "1L" }
                 ],
-                image: "https://ventalochemical.com/upload/products/tiles-cleaner.png"
+                image: "https://ventalochemical.com/upload/products/tiles-cleaner.png",
+                specSheet: null
             },
             {
                 id: "part-a-hardener",
@@ -161,8 +171,10 @@ export const products = [
                 features: [
                     { title: "Aspect", value: "Clear / Amber liquid" }
                 ],
-                image: "https://ventalochemical.com/upload/products/part-a-hardener.png"
+                image: "https://ventalochemical.com/upload/products/part-a-hardener.png",
+                specSheet: null
             }
+
         ]
     }
 ];
